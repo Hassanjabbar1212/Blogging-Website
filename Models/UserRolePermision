@@ -1,0 +1,18 @@
+using Blogs.Controllers;
+
+namespace Blogs.Models
+{
+    public class userRole
+    {
+        public Guid Id { get; set; }
+
+        public Guid UserId { get; set; }
+       public User1? User1 { get; set; }
+
+        public Guid RoleId { get; set; }
+        public Role? Role { get; set; }
+
+        public Guid PermisionId { get; set; }
+       public Permision? Permision { get; set; }
+    }
+}

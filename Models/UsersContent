@@ -1,0 +1,19 @@
+namespace Blogs.Models
+{
+    public class UsersContent
+    {
+        public Guid Id { get; set; }
+        public string? Title { get; set; }
+        public Guid CatagoryId { get; set; }
+        public Catagories Catagory { get; set; }
+       // public string? ShortTitle { get; set; }
+        public Guid User1Id{ get; set; }
+        public User1 User1 { get; set; }
+        public string? Description { get; set;}
+        public DateTime? CreatedDate { get; set; }
+        public string ImagePath { get; set; }
+
+        public int? CountView { get; set; }
+
+    }
+}

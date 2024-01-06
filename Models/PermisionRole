@@ -1,0 +1,13 @@
+namespace Blogs.Models
+{
+    public class Permisionrole
+    {
+        public Guid Id { get; set; }
+
+        public Guid RoleID { get; set; }
+        public Role? Role { get; set; }
+
+        public Guid PermisionId { get; set; }
+        public Permision? Permision { get; set; }
+    }
+}

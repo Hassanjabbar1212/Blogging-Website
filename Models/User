@@ -1,0 +1,25 @@
+namespace Blogs.Models
+{
+    public class User1
+    {
+        public Guid Id { get; set; }
+
+        public string? FristName { get; set; }
+
+        public string? LastName { get; set; }
+
+        public string? Email { get; set; }
+
+        public string? Password { get; set; }
+
+        public string? Address { get; set; }
+
+        public List<UsersContent>? UsersContents { get; set; }
+
+        //public List<userRole> Roles { get; set; }
+        public List<userRole>? Roles { get; set; }
+
+        public string? ImagePath { get; set; }
+
+    }
+}

@@ -1,0 +1,152 @@
+using Blogs.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using System.Security.Claims;
+using Blogs.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Blogs.Controllers
+{
+    public class HomeController : Controller
+    {
+        //private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
+        public HomeController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+        //public HomeController(ILogger<HomeController> logger)
+        //{
+        //    _logger = logger;
+        //}
+        [HttpGet]
+        public IActionResult Index()
+        {
+            var categories = _context.Catagories.ToList(); // Fetch categories from your data source
+
+            ViewBag.Categories = categories;
+
+            return View();
+        }
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
+        [HttpPost]
+        public IActionResult Register(User1 xyz, IFormFile imageFile)
+        {
+            // Check if an image file was uploaded
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                // Define your image upload path and file name
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Users");
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                // Save the uploaded image file to the server
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    imageFile.CopyTo(fileStream);
+                }
+               xyz.ImagePath = "/Users/" + fileName;
+            }
+                _context.User1.Add(xyz);
+            _context.SaveChanges();
+
+            return RedirectToAction("Index", "Home");
+        }
+       
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login(User1 loginPage)
+        {
+            var user = await _context.User1
+                .FirstOrDefaultAsync(u => u.Email == loginPage.Email && u.Password == loginPage.Password);
+
+            if (user != null)
+            {
+                var userRole = await _context.userRoles
+                    .Include(ur => ur.Role)
+                    .FirstOrDefaultAsync(ur => ur.UserId == user.Id);
+
+                if (userRole != null)
+                {
+                    var roleName = userRole.Role.RoleName;
+
+                    var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Email),
+                new Claim(ClaimTypes.Sid, Convert.ToString(user?.Id)),
+                // Add other claims as needed
+            };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var authProperties = new AuthenticationProperties
+                    {
+                        AllowRefresh = true,
+                        IsPersistent = true,
+                    };
+
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                    if (roleName == "Admin")
+                    {
+                        return RedirectToAction("Admin", "User");
+                    }
+                    else
+                    {
+                        return RedirectToAction("Profile", "User");
+                    }
+                }
+                // Handle case where the user has no associated role
+            }
+
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            return View();
+        }
+
+        public IActionResult AddCatagory()
+        {
+            return View();
+        }
+        [HttpPost]
+        public IActionResult AddCatagory(Catagories catagory)
+        {
+            _context.Catagories.Add(catagory);
+            _context.SaveChanges();
+
+            return RedirectToAction("Index","Home");
+        }
+        [HttpGet]
+        public IActionResult SubCatagory() {
+            var categories = _context.Catagories.ToList(); 
+
+            ViewBag.CategoryName = categories;
+            return View();
+        }
+        [HttpPost]
+        public IActionResult SubCatagory(SubCatagory subCatagory)
+        {
+            _context.SubCatagory.Add(subCatagory);
+            _context.SaveChanges();
+            return RedirectToAction("Index","Home");
+        }
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+        [HttpGet]
+        public IActionResult Logout()
+        {
+            return RedirectToAction("Index","Home");
+        }
+    }
+}

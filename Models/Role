@@ -1,0 +1,10 @@
+namespace Blogs.Models
+{
+    public class Role
+    {
+        public Guid Id { get; set; }
+        public string RoleName { get; set; }
+       // public List<userRole> userRoles { get; set; }
+
+    }
+}

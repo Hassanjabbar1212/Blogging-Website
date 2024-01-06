@@ -1,0 +1,16 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
+
+namespace Blogs.Models
+{
+    public class Catagories 
+    {
+        public Guid Id { get; set; }
+
+        public string? CatagoryName { get; set; }
+
+        public List<SubCatagory>? SubCategories { get; set; }
+
+        public List<UsersContent>? UsersContents { get; set; }
+    }
+}

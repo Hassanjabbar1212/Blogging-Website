@@ -1,0 +1,111 @@
+﻿<style>
+
+    /* Layout styles */
+    .user-profile-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .blog-description {
+        padding: 5px; /* Adjust padding */
+        margin-bottom: 0; /* Remove margin */
+    }
+
+    .user-details {
+        margin-left: 10px;
+        margin-bottom: 0; /* Remove margin */
+    }
+    .blog-item {
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.3s;
+    }
+
+    .blog-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0; /* Remove margin */
+    }
+
+    .blog-metadata {
+        font-size: 0.9rem;
+        color: #777;
+        margin-bottom: 0; /* Remove margin */
+    }
+
+    /* Profile picture */
+    .user-profile-pic img {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .content-pic {
+        float: right;
+        margin-left: 0; /* Set margin to zero */
+        width: 50%; /* Adjust width as needed */
+        height: auto;
+    }
+    /* Medium-sized pictures */
+    .medium-pic {
+        width: 100%;
+        height: auto;
+    }
+</style>
+@model List<UsersContent>
+<div class="container mt-4">
+    <h1>Blog Posts</h1>
+
+    <ul class="blog-list">
+        @{
+            // Initialize lastUserId and lastDate before the loop starts
+            var lastUserId = "";
+            var lastDate = DateTime.MinValue;
+        }
+
+        @foreach (var userContent in Model)
+        {
+            var userId = userContent.User1Id.ToString(); // Convert Guid to string
+            var userName = userContent.User1.FristName + " " + userContent.User1.LastName;
+            var profilePicPath = userContent.User1.ImagePath; // Assuming the path to the profile picture is stored in ImagePath
+            var contentPicPath = userContent.ImagePath;
+            var currentDate = userContent.CreatedDate != null ? userContent.CreatedDate.Value : DateTime.MinValue;
+
+            <li class="blog-item">
+                @if (userId != lastUserId || (userId == lastUserId && currentDate != lastDate))
+                {
+                    <div class="user-profile-info ">
+                        <div class="user-profile-pic">
+                            <img src="@profilePicPath" alt="Profile Picture" class="profile-pic-small rounded-circle" />
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">@userName</div>
+                            <div class="blog-metadata">
+                                <span class="post-date">@currentDate.ToString("MMMM yyyy")</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="blog-title" style="font-size: 20px; font-weight: bold;">@userContent.Title</div>
+                    // Update lastUserId and lastDate to the current values
+                    lastUserId = userId;
+                    lastDate = currentDate;
+                }
+                <div class="blog-content row">
+                    <div class="blog-description" id="description-@userContent.Id">
+                        <div class="full-content">@Html.Raw(userContent.Description)</div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(contentPicPath))
+                    {
+                        <div class="content-pic col-md-6 p-5" id="content-pic-@userContent.Id">
+                            <img src="@contentPicPath" alt="Content Picture" class="medium-pic img-fluid" />
+                        </div>
+                    }
+                </div>
+            </li>
+        }
+    </ul>
+
+
+</div>

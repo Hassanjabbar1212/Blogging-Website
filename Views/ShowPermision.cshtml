@@ -1,0 +1,42 @@
+﻿@model List<Permision>
+
+<div class="d-flex justify-content-end mb-3">
+    <a asp-action="AddPermision" asp-controller="Roles" class="btn btn-primary btn-circle btn-lg">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Role Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td role="group">
+                        <a asp-action="EditRole" asp-controller="Roles" asp-route-id="@item.Id">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+
+                        <a asp-action="DeleteRole" asp-controller="Roles" asp-route-id="@item.Id">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="2">No roles found.</td>
+            </tr>
+        }
+    </tbody>
+</table>

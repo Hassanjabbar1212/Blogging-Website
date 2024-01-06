@@ -1,0 +1,37 @@
+﻿@model RolePermisionUserViewModel
+
+<form asp-action="AssignRole" asp-controller="Roles" method="post">
+    <div class="form-group">
+        <label for="roleSelect">Select Role:</label>
+        <select id="roleSelect" name="RoleId" class="form-control">
+            @foreach (var role in ViewBag.Role)
+            {
+                <option value="@role.Id">@role.RoleName</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="userSelect">Select User:</label>
+        <select id="userSelect" name="UserId" class="form-control">
+            @foreach (var user in ViewBag.User1)
+            {
+                <option value="@user.Id">@user.FristName</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="permissionSelect">Select Permission:</label>
+        <select id="permissionSelect" name="PermissionId" class="form-control">
+            @foreach (var permission in ViewBag.Permision)
+            {
+                <option value="@permission.Id">@permission.Name</option>
+            }
+        </select>
+    </div>
+
+    <!-- Other input fields if needed -->
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>

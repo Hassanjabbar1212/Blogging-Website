@@ -1,0 +1,137 @@
+﻿@model UsersContent
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Froala Editor with Multiple Image Upload</title>
+    <!-- Include Froala Editor styles -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/froala-editor/4.0.6/css/froala_editor.pkgd.min.css" rel="stylesheet">
+    <style>
+        /* Add your custom styles here */
+        /* Example: */
+        body {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-secondary border-bottom box-shadow mb-3">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" asp-area="" asp-controller="Home" asp-action="Index">Blogging Website</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse collapse w-100 d-flex justify-content-between">
+                <ul class="navbar-nav">
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <form class="d-flex" action="/User/Search" method="get">
+                            <input type="text" name="search" placeholder="Search..." class="form-control me-2">
+                            <button class="btn btn-outline-light" type="submit">Search</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- Your HTML form with Froala Editor -->
+    <form id="myForm" asp-action="Write" asp-controller="User" method="post" onsubmit="submitForm()" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="categorySelect">Select a Category:</label>
+            <select id="categorySelect" name="CategoryId" class="form-control">
+                @foreach (var category in ViewBag.Categories)
+                {
+                    <option value="@category.Id">@category.CatagoryName</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Title">Title:</label>
+            <input asp-for="Title" id="title" name="Title" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="editor">Content:</label>
+            <textarea id="editor" name="content" class="form-control"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <!-- Include Froala Editor scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/froala-editor/4.0.6/js/froala_editor.pkgd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Array to store uploaded image paths
+            var uploadedImages = [];
+
+            new FroalaEditor('#editor', {
+                // Add your configuration options for Froala Editor here
+                // For image upload configuration, check Froala Editor's documentation
+                imageUploadURL: '/User/UploadImage',
+                events: {
+                    'image.uploaded': function (response) {
+                        // Handle image upload response
+                        console.log('Image uploaded:', response);
+
+                        // Assuming response contains the path of the uploaded image
+                        var imagePath = response.link;
+
+                        // Add the image path to the array
+                        uploadedImages.push(imagePath);
+                    },
+                    'image.error': function (error, response) {
+                        // Handle image upload error
+                        console.error('Image upload error:', error, response);
+                    }
+                }
+            });
+
+            // Attach an event listener to the form submission
+            document.getElementById('myForm').addEventListener('submit', function (event) {
+                event.preventDefault(); // Prevent the default form submission
+                submitForm(); // Call your custom submission function
+            });
+
+            // Function to submit form data
+            function submitForm() {
+                // Get the HTML content of the editor
+                var editorContent = $('.fr-element').html();
+
+                // Create a form data object
+                var formData = new FormData();
+
+                // Append the editor content to the form data
+                formData.append('EditorContent', editorContent);
+
+                // Append the array of uploaded image paths to the form data
+                formData.append('ImagePaths', JSON.stringify(uploadedImages));
+
+                // Add other form data if needed
+                formData.append('CategoryId', $('#categorySelect').val());
+                formData.append('Title', $('#title').val());
+                console.log('Form Data:', formData);
+
+                // Use AJAX to submit the form
+                $.ajax({
+                    url: '/User/Write1',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        console.log('Form submitted successfully:', response);
+                    },
+                    error: function (error) {
+                        console.error('Error submitting form:', error);
+                    }
+                });
+            }
+        });
+
+    </script>
+</body>
+</html>

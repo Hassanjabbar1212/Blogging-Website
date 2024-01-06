@@ -1,0 +1,120 @@
+using Blogs.Data;
+using Blogs.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Blogs.Controllers
+{
+    public class Roles : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        public Roles(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+        [HttpGet]
+        public IActionResult AddRole()
+        {
+            return View();
+        }
+        [HttpPost]
+        public IActionResult AddRole(Role role) {
+            _context.Role.Add(role);
+            _context.SaveChanges();
+            return RedirectToAction("Admin", "User");
+        }
+        [HttpGet]
+        public IActionResult ShowRole()
+        {
+            var Role = _context.Role.ToList();
+            return View(Role);
+        }
+        [HttpGet]
+        public IActionResult EditRole(Guid id)
+        {
+            if(id==null)
+            {
+                return View("Error");
+            }
+            var role = _context.Role.FirstOrDefault(x => x.Id==id);
+            if(role==null)
+            {
+                return NotFound();
+            }
+
+            return View(role);
+        }
+        [HttpPost]
+        public IActionResult EditRole(Role role) {
+            _context.Role.Update(role);
+            _context.SaveChanges();
+            return RedirectToAction("ShowRole");
+        }
+        [HttpGet]
+       public IActionResult DeleteRole(Guid id)
+        {
+            if (id == null)
+            {
+                return View();
+            }
+            var Role = _context.Role.Find(id);
+            if (Role == null)
+            {
+                return NotFound();
+            }
+            return View(Role);
+
+        }
+        [HttpPost]
+        public IActionResult DeleteRoles(Guid id)
+        {
+            var Role = _context.Role.Find(id);
+            if (Role == null)
+            {
+                return NotFound();
+            }
+            _context.Role.Remove(Role);
+            _context.SaveChanges();
+            return RedirectToAction("ShowRole");
+        }
+        [HttpGet]
+        public IActionResult ShowPermision()
+        {
+           var permision =  _context.Permision.ToList();
+            return View(permision);
+        }
+
+        [HttpGet]
+        public IActionResult AddPermision()
+        {
+            return View();
+        }
+        [HttpPost]
+        public IActionResult AddPermision(Permision permision)
+        {
+            _context.Permision.Add(permision);
+            _context.SaveChanges();
+            return RedirectToAction("ShowPermision");
+        }
+        [HttpGet]
+        public IActionResult AssignRole()
+        {
+            ViewBag.Role = _context.Role.ToList();
+            ViewBag.User1 = _context.User1.ToList();
+            ViewBag.Permision = _context.Permision.ToList();
+            return View();
+        }
+        [HttpPost]
+        public IActionResult AssignRole(RolePermisionUserViewModel permision)
+        {
+            var userrole = new userRole
+            {
+                RoleId = permision.RoleId,
+                UserId = permision.UserId,
+                PermisionId = permision.PermissionId,
+            };
+            _context.userRoles.Add(userrole);
+            _context.SaveChanges();
+            return RedirectToAction("ShowPermision");
+        }
+    }
+}

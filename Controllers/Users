@@ -1,1 +1,317 @@
+using Blogs.Data;
+using Blogs.Models;
+using HtmlAgilityPack;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Mail;
+using System.Net;
+using System.Security.Claims;
+
+namespace Blogs.Controllers
+{
+    //[Authorize]
+    public class User : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        public User(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+        [HttpPost]
+        public IActionResult FullContent(Guid contentId)
+        {
+            var userContent = _context.UsersContent.Find(contentId);
+
+            if (userContent != null)
+            {
+               
+                userContent.CountView++;
+
+               
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("FullContent1", "User", new { CatagoryId = userContent.CatagoryId });
+        }
+        [HttpGet]
+        public IActionResult FullContent1(Guid CatagoryId)
+        {
+            var content = _context.UsersContent
+    .Include(u => u.User1)
+    .Include(c => c.Catagory)
+    .Where(a => a.CatagoryId == CatagoryId).ToList();
+
+            return View(content);
+        }
+        [HttpGet]
+        public IActionResult Search(string search) 
+        {
+            var model = _context.UsersContent
+           .Include(item => item.User1)      // Include the User related entity
+           .Include(item => item.Catagory)  // Include the Category related entity
+           .ToList();
+
+            // Retrieve data from the database
+            if (!string.IsNullOrEmpty(search))
+            {
+                // Modify your data retrieval logic based on the search query
+                // For example, you can filter by Title or Description
+                model = model.Where(item => item.Title.Contains(search) || item.Description.Contains(search)).ToList();
+            }
+
+            return View(model);
+        }
+        public IActionResult ShowUsers()
+        {
+            var users = _context.User1.ToList();
+            return View(users);
+        }
+        [HttpGet]
+        public IActionResult EditUsers(Guid Id)
+        {
+            if (Id == null)
+            {
+                return View();
+            }
+            var Users = _context.User1.Find(Id);
+            if(Users ==null)
+            {
+                return NotFound();
+            }
+            return View(Users);
+        }
+        [HttpPost]
+        public IActionResult EditUsers(User1 user)
+        {
+            _context.User1.Update(user);
+            _context.SaveChanges();
+            return RedirectToAction("Admin");
+        }
+        [HttpGet]
+        public IActionResult DeleteUsers(Guid id)
+        {
+            if (id == null)
+            {
+                return View();
+            }
+            var catagory = _context.User1.Find(id);
+            if (catagory == null)
+            {
+                return NotFound();
+            }
+            return View(catagory);
+
+        }
+        [HttpPost]
+        public IActionResult DeleteUser(Guid id)
+        {
+            var Users = _context.User1.Find(id);
+            if (Users == null)
+            {
+                return NotFound();
+            }
+            _context.User1.Remove(Users);
+            _context.SaveChanges();
+            return RedirectToAction("Admin");
+
+        }
+        public IActionResult Profile()
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.Sid);
+
+            if (Guid.TryParse(userIdString, out Guid userId))
+            {
+                var content = _context.UsersContent
+     .Include(u => u.User1)
+     .Include(c => c.Catagory)
+     .Where(a => a.User1Id==userId).ToList();
+                return View(content);
+            }
+            else
+            {
+                return View();
+            }
+              
+        }
+        [HttpGet]
+        public IActionResult Admin()
+        {
+            var categories = _context.Catagories.ToList(); 
+
+            ViewBag.Categories = categories;
+
+            return View();
+        }
+        [HttpGet]
+        public IActionResult Write1() {
+
+            var categories = _context.Catagories.ToList(); 
+
+            ViewBag.Categories = categories;
+
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Write1([FromForm] string EditorContent, [FromForm] Guid CategoryId, [FromForm] string Title)
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.Sid);
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(EditorContent);
+
+            // Initialize lists to store data
+            List<string> textContents = new List<string>();
+            List<string> imagePaths = new List<string>();
+
+            // Extract text content within <p> tags
+            foreach (var pNode in doc.DocumentNode.Descendants("p"))
+            {
+                if (!pNode.Descendants("img").Any())
+                {
+                    var textContent = pNode.InnerHtml;
+                    textContents.Add(textContent);
+                }
+            }
+
+            // Extract image paths within <img> tags
+            foreach (var imgNode in doc.DocumentNode.Descendants("img"))
+            {
+                var srcAttribute = imgNode.GetAttributeValue("src", "");
+                imagePaths.Add(srcAttribute);
+            }
+
+            // Use EF to store data in the database
+            if (Guid.TryParse(userIdString, out Guid userId))
+            {
+                // Use EF to store data in the database
+                for (int i = 0; i < Math.Max(textContents.Count, imagePaths.Count); i++)
+                {
+                    // Create an instance of your model class
+                    var userContent = new UsersContent
+                    {
+                        Description = i < textContents.Count ? textContents[i] : null,
+                        ImagePath = i < imagePaths.Count ? imagePaths[i] : null,
+                        CatagoryId = CategoryId,
+                        Title = Title,
+                        User1Id = userId,
+                        CreatedDate = DateTime.Now,
+                       
+                        
+                    };
+
+                    // Add the instance to the database context
+                    _context.UsersContent.Add(userContent);
+                }
+
+                // Save changes to the database
+                _context.SaveChanges();
+
+                // Return a response or redirect as needed
+                return RedirectToAction("Success");
+            }
+            else
+            {
+                // Handle the case where userIdString is not a valid Guid
+                // You might want to log an error, throw an exception, or handle it appropriately
+                return BadRequest("Invalid user ID format.");
+            }
+        }
+        [HttpGet]
+    public IActionResult ShowContent(Guid CatagoryId)
+        {
+            var content = _context.UsersContent
+     .Include(u => u.User1) 
+     .Include(c => c.Catagory) 
+     .Where(a=>a.CatagoryId== CatagoryId).ToList();
+
+            return View(content);
+        }
+        [HttpPost]
+        public IActionResult UploadImage(IFormFile file)
+        {
+            // Handle the uploaded image, save it to a directory, and return its URL
+            // Example logic (C# ASP.NET Core):
+            if (file != null && file.Length > 0)
+            {
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var filePath = Path.Combine("wwwroot/img", fileName); // Adjust the path where images are saved
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    file.CopyTo(stream);
+                }
+
+                // Return the URL of the uploaded image
+                var imageUrl = $"/img/{fileName}"; // Adjust the URL based on your server setup
+                return Ok(new { link = imageUrl });
+            }
+
+            return BadRequest();
+        }
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+        [HttpPost]
+        public IActionResult ForgotPassword(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                ModelState.AddModelError("Email", "Email is required.");
+                return RedirectToAction("Index", "Home"); // Display the form again with an error message.
+            }
+
+            // Check if the email exists in your user database.
+            // If it exists, generate a random password and send it via email.
+
+            var user = _context.User1.FirstOrDefault(u => u.Email == email);
+
+            if (user != null)
+            {
+                // Generate a random password
+                //const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                //var random = new Random();
+                //var randomPassword = new string(Enumerable.Repeat(chars, 12)
+                //    .Select(s => s[random.Next(s.Length)]).ToArray());
+
+                //// Update the user's password in the database with the random password.
+                //user.Password = randomPassword;
+
+
+                //_context.SaveChanges();
+                var password = user.Password;
+                var smtpClient = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential("hassanjabbar2017@gmail.com", "poljeaszpdjiywtk"),
+                    EnableSsl = true,
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress("hassanjabbar2017@gmail.com"), // Replace with your Gmail email address.
+                    Subject = "Your Password",
+                    Body = $"Your password is: {password}",
+                    IsBodyHtml = false,
+                };
+
+                mailMessage.To.Add(email); // Use the provided email as the recipient.
+
+                smtpClient.Send(mailMessage);
+
+                return RedirectToAction("Login", "Home");
+            }
+            else
+            {
+                // Handle the case where the email doesn't exist.
+                ModelState.AddModelError("Email", "Email not found.");
+
+
+            }
+            return RedirectToAction("Login", "Home");
+        }
+
+    }
+}
 
